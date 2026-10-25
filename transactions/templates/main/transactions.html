@@ -1,0 +1,91 @@
+{% extends "main/base.html" %}
+{% block title %}Resultados | CNAB Studio{% endblock %}
+{% block transactions_active %}aria-current="page"{% endblock %}
+{% block extra_css %}
+<style>
+  .results-header { display: flex; align-items: end; justify-content: space-between; gap: 20px; }
+  .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 32px; }
+  .stat { padding: 24px 26px; min-height: 143px; }
+  .stat-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .stat-label { color: #B9ADCC; font-size: 12px; font-weight: 650; }
+  .stat-icon { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: rgba(167, 139, 250, .12); color: #C4B5FD; font-size: 17px; }
+  .stat-value { display: block; margin-top: 15px; font-size: clamp(24px, 3.2vw, 32px); font-weight: 750; letter-spacing: -.04em; }
+  .stat-foot { display: block; margin-top: 7px; color: #9789AE; font-size: 11px; }
+  .stat-primary { background: linear-gradient(130deg, rgba(88, 48, 151, .52), rgba(35, 23, 53, .97)); border-color: rgba(167, 139, 250, .3); }
+  .table-card { margin-top: 22px; padding: 26px 28px 10px; }
+  .table-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding-bottom: 22px; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; background: rgba(167, 139, 250, .11); border: 1px solid rgba(167, 139, 250, .24); padding: 8px 11px; border-radius: 999px; color: #D8B4FE; font-weight: 650; font-size: 11px; }
+  .pill-dot { width: 6px; height: 6px; background: #C4B5FD; border-radius: 50%; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; min-width: 530px; }
+  th { color: #A99ABF; text-align: left; font-size: 11px; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; padding: 14px 12px; border-bottom: 1px solid var(--line); }
+  td { border-bottom: 1px solid rgba(196, 181, 253, .09); padding: 17px 12px; font-size: 13px; }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:hover { background: rgba(167, 139, 250, .055); }
+  th:first-child, td:first-child { padding-left: 0; }
+  th:last-child, td:last-child { padding-right: 0; text-align: right; }
+  .store { display: flex; align-items: center; gap: 12px; }
+  .store-avatar { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; background: rgba(167, 139, 250, .14); color: #C4B5FD; font-size: 15px; font-weight: 800; }
+  .store-name { font-weight: 670; }
+  .money { color: #DDD6FE; font-weight: 750; font-variant-numeric: tabular-nums; font-size: 14px; }
+  .table-meta { font-size: 11px; color: #9789AE; }
+  .empty { text-align: center; padding: 52px 16px; color: var(--muted); line-height: 1.6; }
+  .table-note { margin-top: 10px; padding: 20px 0 15px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 15px; flex-wrap: wrap; color: #9789AE; font-size: 11px; }
+  @media (max-width: 820px) { .stats { grid-template-columns: 1fr; } .stat { min-height: 125px; } }
+  @media (max-width: 560px) { .results-header { align-items: stretch; flex-direction: column; } .results-header .btn { align-self: flex-start; } .table-card { padding: 20px 18px 8px; } }
+</style>
+{% endblock %}
+{% block content %}
+  <div class="results-header">
+    <div>
+      <div class="eyebrow">Painel de resultados</div>
+      <h1 class="page-title">Resumo das transações</h1>
+      <p class="page-lead">Acompanhe os valores consolidados dos estabelecimentos presentes no arquivo CNAB processado.</p>
+    </div>
+    <a class="btn btn-outline" href="/api/cnab/">↥ &nbsp;Nova importação</a>
+  </div>
+
+  <section class="stats" aria-label="Indicadores de importação">
+    <div class="card stat stat-primary">
+      <div class="stat-head"><span class="stat-label">Volume processado</span><span class="stat-icon">↗</span></div>
+      <strong class="stat-value">R$ {{ grand_total|default:0|floatformat:2 }}</strong>
+      <span class="stat-foot">Soma dos valores por estabelecimento</span>
+    </div>
+    <div class="card stat">
+      <div class="stat-head"><span class="stat-label">Estabelecimentos</span><span class="stat-icon">▦</span></div>
+      <strong class="stat-value">{{ store_data|length }}</strong>
+      <span class="stat-foot">Lojas presentes no resumo</span>
+    </div>
+    <div class="card stat">
+      <div class="stat-head"><span class="stat-label">Status da consulta</span><span class="stat-icon">✓</span></div>
+      <strong class="stat-value" style="font-size:24px">{% if store_data %}Disponível{% else %}Sem dados{% endif %}</strong>
+      <span class="stat-foot">Resumo da sessão atual</span>
+    </div>
+  </section>
+
+  <section class="card table-card" aria-label="Tabela de estabelecimentos">
+    <div class="table-header">
+      <div><h2 class="section-heading">Movimentações por loja</h2><p class="section-copy">Valores agrupados por estabelecimento.</p></div>
+      <span class="pill"><span class="pill-dot"></span> Resultado da importação</span>
+    </div>
+    {% if store_data %}
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Estabelecimento</th><th>Registro</th><th>Valor total</th></tr></thead>
+          <tbody>
+            {% for store in store_data %}
+              <tr>
+                <td><div class="store"><span class="store-avatar">{{ forloop.counter }}</span><span class="store-name">{{ store.store_name }}</span></div></td>
+                <td class="table-meta">Estabelecimento {{ forloop.counter|stringformat:"02d" }}</td>
+                <td class="money">R$ {{ store.store_total|floatformat:2 }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="table-note"><span>{{ store_data|length }} estabelecimento(s) listado(s)</span><span>Valores exibidos em reais (BRL)</span></div>
+    {% else %}
+      <div class="empty">Ainda não há resultados nesta sessão.<br><a href="/api/cnab/" style="color:#C4B5FD">Importe um arquivo CNAB</a> para visualizar o resumo.</div>
+    {% endif %}
+  </section>
+{% endblock %}
