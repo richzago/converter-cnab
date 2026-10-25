@@ -296,24 +296,6 @@ Os valores e documentos do exemplo são **fictícios**, não servem como dados r
 - O arquivo **não pode ser um documento de definição de layout bancário**, como um arquivo Protheus/TOTVS com linhas descritivas; isso causa erros ao interpretar datas e valores.
 - A extensão `.txt` por si só **não garante** compatibilidade.
 
-### 10.3. Problema conhecido: último registro
-
-Na implementação original havia:
-
-```python
-while len(formated_file) > end:
-```
-
-Isso ignora o último registro quando o comprimento do arquivo é múltiplo exato de 80. A correção mínima é:
-
-```python
-while len(formated_file) >= end:
-```
-
-**Recomendação:** corrigir essa condição e usar arquivos compostos exclusivamente por registros completos, sem preenchimentos extras. A validação ideal também deve rejeitar arquivos cujo comprimento não seja múltiplo de 80.
-
-> Se a versão atual de `views.py` ainda usar `>`, ela poderá ignorar o último registro. Confirme o código instalado antes de testar. Arquivos de teste antigos com um caractere extra de preenchimento foram um contorno temporário e **não devem ser tratados como formato oficial**.
-
 ## 11. Limitações conhecidas
 
 Esta seção descreve comportamentos observados no código compartilhado durante a recuperação do projeto. Algumas limitações podem ter sido corrigidas localmente; verifique o código atual.
